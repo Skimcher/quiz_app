@@ -1,4 +1,4 @@
-name: Build Windows EXE
+name: Build Windows EXE (Win7)
 
 on:
   push:
@@ -7,16 +7,16 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
       - name: Checkout репозитория
         uses: actions/checkout@v4
 
-      - name: Установка Python 3.11
+      - name: Установка Python 3.8
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.8.18"
 
       - name: Установка зависимостей
         run: pip install -r requirements.txt
