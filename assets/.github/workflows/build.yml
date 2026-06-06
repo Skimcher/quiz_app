@@ -1,0 +1,39 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Установка зависимостей
+        run: pip install -r requirements.txt
+
+      - name: Сборка .exe через PyInstaller
+        run: |
+          pyinstaller `
+            --noconfirm `
+            --onefile `
+            --windowed `
+            --name "УгадайКто" `
+            --add-data "assets;assets" `
+            main.py
+
+      - name: Загрузка .exe как артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: УгадайКто-exe
+          path: dist/УгадайКто.exe
+          retention-days: 30
