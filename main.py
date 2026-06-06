@@ -1,10 +1,11 @@
-import customtkinter as ctk
-from PIL import Image, ImageTk
-import os
 import sys
-
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+import os
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout,
+    QHBoxLayout, QPushButton, QLabel, QFrame, QStackedWidget
+)
+from PyQt5.QtGui import QFont, QPixmap, QColor, QPalette
+from PyQt5.QtCore import Qt
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -38,108 +39,325 @@ CHARACTERS = [
     },
 ]
 
-class QuizApp(ctk.CTk):
+STYLE = """
+QWidget {
+    background-color: #0f0f1a;
+    color: #ffffff;
+    font-family: Arial;
+}
+QPushButton {
+    background-color: #5865f2;
+    color: #ffffff;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 24px;
+    font-size: 15px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #4752c4;
+}
+QPushButton#back_btn {
+    background-color: transparent;
+    color: #9090aa;
+    border: 1px solid #444466;
+    font-weight: normal;
+}
+QPushButton#back_btn:hover {
+    background-color: #1e1e2e;
+}
+QLabel#title {
+    font-size: 40px;
+    font-weight: bold;
+    color: #ffffff;
+}
+QLabel#subtitle {
+    font-size: 14px;
+    color: #9090aa;
+}
+QLabel#accent {
+    font-size: 16px;
+    font-weight: bold;
+    color: #5865f2;
+}
+QLabel#poem {
+    font-size: 16px;
+    color: #e0e0f0;
+    background-color: #1e1e2e;
+    border-radius: 12px;
+    padding: 24px;
+}
+QLabel#name_label {
+    font-size: 20px;
+    font-weight: bold;
+    color: #5865f2;
+}
+"""
+
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.title("Угадай кто")
-        self.geometry("500x650")
-        self.resizable(False, False)
-        self.configure(fg_color="#0f0f1a")
-        self.current_frame = None
-        self.show_main_screen()
+        self.setWindowTitle("Угадай кто")
+        self.setFixedSize(500, 650)
+        self.setStyleSheet(STYLE)
 
-    def show_frame(self, frame_class, *args):
-        if self.current_frame:
-            self.current_frame.destroy()
-        self.current_frame = frame_class(self, *args)
-        self.current_frame.pack(fill="both", expand=True)
+        self.stack = QStackedWidget()
+        self.setCentralWidget(self.stack)
 
-    def show_main_screen(self):
-        self.show_frame(MainScreen)
+        self.main_screen = MainScreen(self)
+        self.choice_screen = ChoiceScreen(self)
 
-    def show_choice_screen(self):
-        self.show_frame(ChoiceScreen)
+        self.stack.addWidget(self.main_screen)
+        self.stack.addWidget(self.choice_screen)
 
-    def show_poem_screen(self, char_index):
-        self.show_frame(PoemScreen, char_index)
+        self.poem_screens = []
+        self.photo_screens = []
+        for i in range(len(CHARACTERS)):
+            ps = PoemScreen(self, i)
+            ph = PhotoScreen(self, i)
+            self.poem_screens.append(ps)
+            self.photo_screens.append(ph)
+            self.stack.addWidget(ps)
+            self.stack.addWidget(ph)
 
-    def show_photo_screen(self, char_index):
-        self.show_frame(PhotoScreen, char_index)
+        self.show_main()
+
+    def show_main(self):
+        self.stack.setCurrentWidget(self.main_screen)
+
+    def show_choice(self):
+        self.stack.setCurrentWidget(self.choice_screen)
+
+    def show_poem(self, idx):
+        self.stack.setCurrentWidget(self.poem_screens[idx])
+
+    def show_photo(self, idx):
+        self.stack.setCurrentWidget(self.photo_screens[idx])
 
 
-class MainScreen(ctk.CTkFrame):
+class MainScreen(QWidget):
     def __init__(self, master):
-        super().__init__(master, fg_color="transparent")
-        accent = ctk.CTkFrame(self, height=4, fg_color="#5865f2", corner_radius=0)
-        accent.pack(fill="x")
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.pack(expand=True)
-        ctk.CTkLabel(center, text="🎮  ИГРА", font=ctk.CTkFont(family="Arial", size=18, weight="bold"), text_color="#5865f2").pack(pady=(0, 8))
-        ctk.CTkLabel(center, text="Угадай кто?", font=ctk.CTkFont(family="Arial", size=44, weight="bold"), text_color="#ffffff").pack(pady=(0, 12))
-        ctk.CTkLabel(center, text="Прочитай подсказку и угадай персонажа!", font=ctk.CTkFont(size=15), text_color="#9090aa").pack(pady=(0, 48))
-        ctk.CTkButton(center, text="▶  Начать игру", font=ctk.CTkFont(size=18, weight="bold"), width=220, height=54, corner_radius=27, fg_color="#5865f2", hover_color="#4752c4", command=master.show_choice_screen).pack()
-        ctk.CTkLabel(self, text="v1.0", font=ctk.CTkFont(size=11), text_color="#444466").pack(pady=16)
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        top_bar = QFrame()
+        top_bar.setFixedHeight(4)
+        top_bar.setStyleSheet("background-color: #5865f2;")
+        layout.addWidget(top_bar)
+
+        center = QWidget()
+        center_layout = QVBoxLayout(center)
+        center_layout.setAlignment(Qt.AlignCenter)
+        center_layout.setSpacing(16)
+
+        lbl_game = QLabel("ИГРА")
+        lbl_game.setObjectName("accent")
+        lbl_game.setAlignment(Qt.AlignCenter)
+
+        lbl_title = QLabel("Угадай кто?")
+        lbl_title.setObjectName("title")
+        lbl_title.setAlignment(Qt.AlignCenter)
+
+        lbl_sub = QLabel("Прочитай подсказку и угадай персонажа!")
+        lbl_sub.setObjectName("subtitle")
+        lbl_sub.setAlignment(Qt.AlignCenter)
+
+        btn_start = QPushButton("Начать игру")
+        btn_start.setFixedSize(220, 54)
+        btn_start.clicked.connect(master.show_choice)
+
+        center_layout.addWidget(lbl_game)
+        center_layout.addWidget(lbl_title)
+        center_layout.addSpacing(8)
+        center_layout.addWidget(lbl_sub)
+        center_layout.addSpacing(32)
+        center_layout.addWidget(btn_start, alignment=Qt.AlignCenter)
+
+        layout.addWidget(center, stretch=1)
+
+        lbl_ver = QLabel("v1.0")
+        lbl_ver.setAlignment(Qt.AlignCenter)
+        lbl_ver.setStyleSheet("color: #444466; font-size: 11px;")
+        layout.addWidget(lbl_ver)
+        layout.addSpacing(16)
 
 
-class ChoiceScreen(ctk.CTkFrame):
+class ChoiceScreen(QWidget):
     def __init__(self, master):
-        super().__init__(master, fg_color="transparent")
-        accent = ctk.CTkFrame(self, height=4, fg_color="#5865f2", corner_radius=0)
-        accent.pack(fill="x")
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.pack(expand=True)
-        ctk.CTkLabel(center, text="Выбери персонажа", font=ctk.CTkFont(size=30, weight="bold"), text_color="#ffffff").pack(pady=(0, 10))
-        ctk.CTkLabel(center, text="Нажми на кнопку — получи подсказку", font=ctk.CTkFont(size=14), text_color="#9090aa").pack(pady=(0, 50))
-        btn_frame = ctk.CTkFrame(center, fg_color="transparent")
-        btn_frame.pack()
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        top_bar = QFrame()
+        top_bar.setFixedHeight(4)
+        top_bar.setStyleSheet("background-color: #5865f2;")
+        layout.addWidget(top_bar)
+
+        center = QWidget()
+        center_layout = QVBoxLayout(center)
+        center_layout.setAlignment(Qt.AlignCenter)
+        center_layout.setSpacing(16)
+
+        lbl_title = QLabel("Выбери персонажа")
+        lbl_title.setStyleSheet("font-size: 28px; font-weight: bold;")
+        lbl_title.setAlignment(Qt.AlignCenter)
+
+        lbl_sub = QLabel("Нажми на кнопку — получи подсказку")
+        lbl_sub.setObjectName("subtitle")
+        lbl_sub.setAlignment(Qt.AlignCenter)
+
+        btn_row = QWidget()
+        btn_row_layout = QHBoxLayout(btn_row)
+        btn_row_layout.setAlignment(Qt.AlignCenter)
+        btn_row_layout.setSpacing(40)
+
         for char in CHARACTERS:
             idx = char["id"] - 1
-            ctk.CTkButton(btn_frame, text=f"  {char['id']}  ", font=ctk.CTkFont(size=36, weight="bold"), width=110, height=110, corner_radius=55, fg_color="#1e1e2e", hover_color="#5865f2", border_width=2, border_color="#5865f2", command=lambda i=idx: master.show_poem_screen(i)).pack(side="left", padx=20)
-        ctk.CTkButton(self, text="← Назад", font=ctk.CTkFont(size=13), width=120, height=36, corner_radius=18, fg_color="transparent", hover_color="#1e1e2e", border_width=1, border_color="#444466", text_color="#9090aa", command=master.show_main_screen).pack(pady=24)
+            btn = QPushButton(str(char["id"]))
+            btn.setFixedSize(110, 110)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #1e1e2e;
+                    color: #ffffff;
+                    border: 2px solid #5865f2;
+                    border-radius: 55px;
+                    font-size: 36px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #5865f2;
+                }
+            """)
+            btn.clicked.connect(lambda checked, i=idx: master.show_poem(i))
+            btn_row_layout.addWidget(btn)
+
+        center_layout.addWidget(lbl_title)
+        center_layout.addWidget(lbl_sub)
+        center_layout.addSpacing(24)
+        center_layout.addWidget(btn_row)
+
+        layout.addWidget(center, stretch=1)
+
+        btn_back = QPushButton("Назад")
+        btn_back.setObjectName("back_btn")
+        btn_back.setFixedSize(140, 40)
+        btn_back.clicked.connect(master.show_main)
+        layout.addWidget(btn_back, alignment=Qt.AlignCenter)
+        layout.addSpacing(24)
 
 
-class PoemScreen(ctk.CTkFrame):
+class PoemScreen(QWidget):
     def __init__(self, master, char_index):
-        super().__init__(master, fg_color="transparent")
+        super().__init__()
         char = CHARACTERS[char_index]
-        accent = ctk.CTkFrame(self, height=4, fg_color="#5865f2", corner_radius=0)
-        accent.pack(fill="x")
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.pack(expand=True, padx=40)
-        ctk.CTkLabel(center, text="🔍 Угадай кто это?", font=ctk.CTkFont(size=16, weight="bold"), text_color="#5865f2").pack(pady=(0, 24))
-        card = ctk.CTkFrame(center, fg_color="#1e1e2e", corner_radius=16)
-        card.pack(fill="x", pady=(0, 32))
-        ctk.CTkLabel(card, text=char["poem"], font=ctk.CTkFont(size=17), text_color="#e0e0f0", justify="center", wraplength=380).pack(padx=30, pady=30)
-        btn_frame = ctk.CTkFrame(center, fg_color="transparent")
-        btn_frame.pack()
-        ctk.CTkButton(btn_frame, text="← Назад", font=ctk.CTkFont(size=14), width=140, height=44, corner_radius=22, fg_color="transparent", hover_color="#1e1e2e", border_width=1, border_color="#444466", text_color="#9090aa", command=master.show_choice_screen).pack(side="left", padx=10)
-        ctk.CTkButton(btn_frame, text="Далее →", font=ctk.CTkFont(size=14, weight="bold"), width=140, height=44, corner_radius=22, fg_color="#5865f2", hover_color="#4752c4", command=lambda: master.show_photo_screen(char_index)).pack(side="left", padx=10)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        top_bar = QFrame()
+        top_bar.setFixedHeight(4)
+        top_bar.setStyleSheet("background-color: #5865f2;")
+        layout.addWidget(top_bar)
+
+        center = QWidget()
+        center_layout = QVBoxLayout(center)
+        center_layout.setContentsMargins(40, 0, 40, 0)
+        center_layout.setAlignment(Qt.AlignCenter)
+        center_layout.setSpacing(16)
+
+        lbl_hint = QLabel("Угадай кто это?")
+        lbl_hint.setObjectName("accent")
+        lbl_hint.setAlignment(Qt.AlignCenter)
+
+        lbl_poem = QLabel(char["poem"])
+        lbl_poem.setObjectName("poem")
+        lbl_poem.setAlignment(Qt.AlignCenter)
+        lbl_poem.setWordWrap(True)
+
+        btn_row = QWidget()
+        btn_row_layout = QHBoxLayout(btn_row)
+        btn_row_layout.setAlignment(Qt.AlignCenter)
+        btn_row_layout.setSpacing(20)
+
+        btn_back = QPushButton("Назад")
+        btn_back.setObjectName("back_btn")
+        btn_back.setFixedSize(140, 44)
+        btn_back.clicked.connect(master.show_choice)
+
+        btn_next = QPushButton("Далее")
+        btn_next.setFixedSize(140, 44)
+        btn_next.clicked.connect(lambda: master.show_photo(char_index))
+
+        btn_row_layout.addWidget(btn_back)
+        btn_row_layout.addWidget(btn_next)
+
+        center_layout.addWidget(lbl_hint)
+        center_layout.addWidget(lbl_poem)
+        center_layout.addSpacing(16)
+        center_layout.addWidget(btn_row)
+
+        layout.addWidget(center, stretch=1)
 
 
-class PhotoScreen(ctk.CTkFrame):
+class PhotoScreen(QWidget):
     def __init__(self, master, char_index):
-        super().__init__(master, fg_color="transparent")
+        super().__init__()
         char = CHARACTERS[char_index]
-        accent = ctk.CTkFrame(self, height=4, fg_color="#5865f2", corner_radius=0)
-        accent.pack(fill="x")
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.pack(expand=True, padx=40)
-        ctk.CTkLabel(center, text="🎉 Вот кто это!", font=ctk.CTkFont(size=22, weight="bold"), text_color="#ffffff").pack(pady=(0, 20))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        top_bar = QFrame()
+        top_bar.setFixedHeight(4)
+        top_bar.setStyleSheet("background-color: #5865f2;")
+        layout.addWidget(top_bar)
+
+        center = QWidget()
+        center_layout = QVBoxLayout(center)
+        center_layout.setContentsMargins(40, 0, 40, 0)
+        center_layout.setAlignment(Qt.AlignCenter)
+        center_layout.setSpacing(16)
+
+        lbl_title = QLabel("Вот кто это!")
+        lbl_title.setStyleSheet("font-size: 22px; font-weight: bold;")
+        lbl_title.setAlignment(Qt.AlignCenter)
+
+        lbl_photo = QLabel()
+        lbl_photo.setAlignment(Qt.AlignCenter)
+        lbl_photo.setFixedSize(300, 300)
         photo_path = char["photo"]
         if os.path.exists(photo_path):
-            img = Image.open(photo_path)
-            img = img.resize((300, 300), Image.LANCZOS)
-            photo = ctk.CTkImage(light_image=img, dark_image=img, size=(300, 300))
-            img_label = ctk.CTkLabel(center, image=photo, text="")
-            img_label.image = photo
+            pixmap = QPixmap(photo_path).scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            lbl_photo.setPixmap(pixmap)
         else:
-            img_label = ctk.CTkFrame(center, width=300, height=300, fg_color="#1e1e2e", corner_radius=16)
-            ctk.CTkLabel(img_label, text="📷\nФото не найдено", text_color="#555577", font=ctk.CTkFont(size=14), justify="center").place(relx=0.5, rely=0.5, anchor="center")
-        img_label.pack(pady=(0, 24))
-        ctk.CTkLabel(center, text=char["name"], font=ctk.CTkFont(size=20, weight="bold"), text_color="#5865f2").pack(pady=(0, 24))
-        ctk.CTkButton(center, text="← Назад к подсказке", font=ctk.CTkFont(size=14), width=200, height=44, corner_radius=22, fg_color="transparent", hover_color="#1e1e2e", border_width=1, border_color="#444466", text_color="#9090aa", command=lambda: master.show_poem_screen(char_index)).pack()
+            lbl_photo.setText("Фото не найдено\nassets/person{}.jpg".format(char_index + 1))
+            lbl_photo.setStyleSheet("background-color: #1e1e2e; border-radius: 12px; color: #555577; font-size: 14px;")
+            lbl_photo.setAlignment(Qt.AlignCenter)
+
+        lbl_name = QLabel(char["name"])
+        lbl_name.setObjectName("name_label")
+        lbl_name.setAlignment(Qt.AlignCenter)
+
+        btn_back = QPushButton("Назад к подсказке")
+        btn_back.setObjectName("back_btn")
+        btn_back.setFixedSize(200, 44)
+        btn_back.clicked.connect(lambda: master.show_poem(char_index))
+
+        center_layout.addWidget(lbl_title)
+        center_layout.addWidget(lbl_photo, alignment=Qt.AlignCenter)
+        center_layout.addWidget(lbl_name)
+        center_layout.addSpacing(8)
+        center_layout.addWidget(btn_back, alignment=Qt.AlignCenter)
+
+        layout.addWidget(center, stretch=1)
 
 
 if __name__ == "__main__":
-    app = QuizApp()
-    app.mainloop()
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
