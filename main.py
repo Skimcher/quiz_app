@@ -98,8 +98,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Угадай кто")
-        self.setFixedSize(500, 650)
-        self.setStyleSheet(STYLE)
+self.showMaximized()
+self.setStyleSheet(STYLE)
 
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
