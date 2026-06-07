@@ -19,9 +19,9 @@ CHARACTERS = [
         "id": 1,
         "poem": (
             "Кепка набок, взгляд орлиный,\n"
-"Спорт и стать — мужчина видный.\n"
-"Каждый день он на зарядке —\n"
-"Угадай без всякой загадки!"
+            "Спорт и стать — мужчина видный.\n"
+            "Каждый день он на зарядке —\n"
+            "Угадай без всякой загадки!"
         ),
         "photo": resource_path("assets/person1.jpg"),
         "name": "Персонаж 1"
@@ -30,9 +30,9 @@ CHARACTERS = [
         "id": 2,
         "poem": (
             "Она урок ведёт с улыбкой,\n"
-"Характер добрый, не ошибка.\n"
-"Джони — пёс её родной —\n"
-"Угадай, кто перед тобой!"
+            "Характер добрый, не ошибка.\n"
+            "Джони — пёс её родной —\n"
+            "Угадай, кто перед тобой!"
         ),
         "photo": resource_path("assets/person2.jpg"),
         "name": "Персонаж 2"
@@ -41,8 +41,8 @@ CHARACTERS = [
 
 STYLE = """
 QWidget {
-    background-color: #0f0f1a;
-    color: #ffffff;
+    background-color: #f5f0e8;
+    color: #2c2c2c;
     font-family: Arial;
 }
 QPushButton {
@@ -59,21 +59,21 @@ QPushButton:hover {
 }
 QPushButton#back_btn {
     background-color: transparent;
-    color: #9090aa;
-    border: 1px solid #444466;
+    color: #7070aa;
+    border: 1px solid #aaaacc;
     font-weight: normal;
 }
 QPushButton#back_btn:hover {
-    background-color: #1e1e2e;
+    background-color: #ede8dc;
 }
 QLabel#title {
     font-size: 40px;
     font-weight: bold;
-    color: #ffffff;
+    color: #2c2c2c;
 }
 QLabel#subtitle {
     font-size: 14px;
-    color: #9090aa;
+    color: #7070aa;
 }
 QLabel#accent {
     font-size: 16px;
@@ -82,8 +82,8 @@ QLabel#accent {
 }
 QLabel#poem {
     font-size: 16px;
-    color: #e0e0f0;
-    background-color: #1e1e2e;
+    color: #2c2c2c;
+    background-color: #ede8dc;
     border-radius: 12px;
     padding: 24px;
 }
@@ -98,8 +98,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Угадай кто")
-self.showMaximized()
-self.setStyleSheet(STYLE)
+        self.setStyleSheet(STYLE)
 
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
@@ -120,6 +119,7 @@ self.setStyleSheet(STYLE)
             self.stack.addWidget(ps)
             self.stack.addWidget(ph)
 
+        self.showMaximized()
         self.show_main()
 
     def show_main(self):
@@ -179,7 +179,7 @@ class MainScreen(QWidget):
 
         lbl_ver = QLabel("v1.0")
         lbl_ver.setAlignment(Qt.AlignCenter)
-        lbl_ver.setStyleSheet("color: #444466; font-size: 11px;")
+        lbl_ver.setStyleSheet("color: #aaaaaa; font-size: 11px;")
         layout.addWidget(lbl_ver)
         layout.addSpacing(16)
 
@@ -202,7 +202,7 @@ class ChoiceScreen(QWidget):
         center_layout.setSpacing(16)
 
         lbl_title = QLabel("Выбери персонажа")
-        lbl_title.setStyleSheet("font-size: 28px; font-weight: bold;")
+        lbl_title.setStyleSheet("font-size: 28px; font-weight: bold; color: #2c2c2c;")
         lbl_title.setAlignment(Qt.AlignCenter)
 
         lbl_sub = QLabel("Нажми на кнопку — получи подсказку")
@@ -220,8 +220,8 @@ class ChoiceScreen(QWidget):
             btn.setFixedSize(110, 110)
             btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #1e1e2e;
-                    color: #ffffff;
+                    background-color: #ede8dc;
+                    color: #2c2c2c;
                     border: 2px solid #5865f2;
                     border-radius: 55px;
                     font-size: 36px;
@@ -229,6 +229,7 @@ class ChoiceScreen(QWidget):
                 }
                 QPushButton:hover {
                     background-color: #5865f2;
+                    color: #ffffff;
                 }
             """)
             btn.clicked.connect(lambda checked, i=idx: master.show_poem(i))
@@ -322,7 +323,7 @@ class PhotoScreen(QWidget):
         center_layout.setSpacing(16)
 
         lbl_title = QLabel("Вот кто это!")
-        lbl_title.setStyleSheet("font-size: 22px; font-weight: bold;")
+        lbl_title.setStyleSheet("font-size: 22px; font-weight: bold; color: #2c2c2c;")
         lbl_title.setAlignment(Qt.AlignCenter)
 
         lbl_photo = QLabel()
@@ -334,7 +335,7 @@ class PhotoScreen(QWidget):
             lbl_photo.setPixmap(pixmap)
         else:
             lbl_photo.setText("Фото не найдено\nassets/person{}.jpg".format(char_index + 1))
-            lbl_photo.setStyleSheet("background-color: #1e1e2e; border-radius: 12px; color: #555577; font-size: 14px;")
+            lbl_photo.setStyleSheet("background-color: #ede8dc; border-radius: 12px; color: #888888; font-size: 14px;")
             lbl_photo.setAlignment(Qt.AlignCenter)
 
         lbl_name = QLabel(char["name"])
@@ -359,5 +360,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = MainWindow()
-    window.show()
     sys.exit(app.exec_())
